@@ -1,6 +1,13 @@
 {
-  "title": "Template Beispiel I",
-  "template": "default"
+  "title":"Template Beispiel II",
+  "template": "template-nav",
+
+  "vorname": "Bernd",
+  "nachname": "Das Brot"
 }
 ---
-<p>Ich bin ein valides Dokument</p>
+<p>
+  Hallo {{ page.vorname }},
+  {{ page.vorname }} <em>{{ page.nachname }}</em>
+</p>
+{{ include "includeTest" }}

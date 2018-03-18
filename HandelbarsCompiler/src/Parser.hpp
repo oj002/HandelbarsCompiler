@@ -7,7 +7,7 @@ namespace hbs
 	class Parser
 	{
 	public:
-		Parser(const std::string &path)
+		explicit Parser(const std::string &path)
 		{
 			loadTemplates(path);
 		
@@ -44,16 +44,50 @@ namespace hbs
 
 			/*for (int i = static_cast<int>(pathTree.size()) - 1; i >= 0; --i)
 			{
-				if (files[pathTree[i]].hbs.find("{{ include") != files[pathTree[i]].hbs.npos)
+				FileData &file = files[pathTree[i]];
+				size_t begPos = file.hbs.find("{{ include");
+				size_t endPos = file.hbs.find("}}", begPos);
+
+				if (begPos != file.hbs.npos && endPos != file.hbs.npos)
 				{
-					loadIncludeTree(Filepath);
+					std::string subStr = file.hbs.substr(begPos + 12, endPos - (begPos + 12) - 2);
+					removeFronBackWhitespaces(&subStr);
+					loadIncludeTree(subStr + ".hbs"));
 				}
 			}*/
+			for (int i = static_cast<int>(pathTree.size()) - 1; i >= 0; --i)
+			{
+				if (files[pathTree[i]].hbs.find("{{ include") != files[pathTree[i]].hbs.npos)
+				{
+					loadIncludeTree(pathTree[i]);
+				}
+			}
 		}
 
 		void loadIncludeTree(const std::string &path)
 		{
-			
+			FileData &file = files[path];
+			size_t begPos = file.hbs.find("{{ include");
+			size_t endPos = file.hbs.find("}}", begPos);
+			while (begPos != file.hbs.npos && endPos != file.hbs.npos)
+			{
+				std::string subStr = file.hbs.substr(begPos + 12, endPos - (begPos + 12) - 2);
+				removeFronBackWhitespaces(&subStr);
+				subStr += ".hbs";
+
+				std::ifstream fin(subStr);
+				std::string fileStr((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+
+				std::string hbs(parse_hbsToString(fileStr));
+				nlohmann::json json = parse_hbsToJson(fileStr);
+				files.insert(std::pair<std::string, FileData>(subStr, { hbs, json }));
+
+				loadIncludeTree(subStr);
+
+				file.hbs.erase(begPos, endPos - begPos + 2);
+				begPos = file.hbs.find("{{ include");
+				endPos = file.hbs.find("}}", begPos);
+			}
 		}
 		
 	private:
@@ -68,4 +102,4 @@ namespace hbs
 		std::map<std::string, FileData> files;
 		std::vector<std::string> pathTree;
 	};
-}
+} // namespace hbs

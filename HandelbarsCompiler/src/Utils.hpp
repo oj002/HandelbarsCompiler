@@ -1,8 +1,8 @@
 #pragma once
-#include <iostream>
-#include <fstream>
 #include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <iostream>
 
 // https://github.com/nlohmann/json
 #include "json.hpp"
@@ -26,16 +26,14 @@ namespace hbs
 		{
 			return (str.substr(str.find("---") + 3, str.length()));
 		}
-		else
-		{
-			return str;
-		}
+
+		return str;
 	}
 
 	void removeFronBackWhitespaces(std::string * str)
 	{
-		str->erase(str->begin(), std::find_if(str->begin(), str->end(), [](int ch) { return !std::isspace(ch); }));
-		str->erase(std::find_if(str->rbegin(), str->rend(), [](int ch) { return !std::isspace(ch); }).base(), str->end());
+		str->erase(str->begin(), std::find_if(str->begin(), str->end(), [](int ch) { return std::isspace(ch) == 0; }));
+		str->erase(std::find_if(str->rbegin(), str->rend(), [](int ch) { return std::isspace(ch) == 0; }).base(), str->end());
 	}
 
-}
+} // namespace hbs

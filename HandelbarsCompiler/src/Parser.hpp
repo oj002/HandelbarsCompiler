@@ -15,11 +15,14 @@ namespace hbs
 			{
 				std::cout << itr.first << ":\n" << itr.second.hbs << "\nJson:\n" << itr.second.json << "\n\n\n";
 			}
+
+			std::cout << "global Json:\n" << globalJson << '\n';
 		}
 
 	private:
 		void loadTemplates(const std::string &path)
 		{
+			bool once = true;
 			std::string Filepath = path;
 			do
 			{
@@ -28,8 +31,20 @@ namespace hbs
 
 				std::string hbs(parse_hbsToString(fileStr));
 				nlohmann::json json = parse_hbsToJson(fileStr);
-
 				files.insert(std::pair<std::string, FileData>(Filepath, { hbs, json }));
+				if (!json.empty())
+				{
+					if (once)
+					{
+						globalJson = json;
+						once = false;
+					}
+					else
+					{
+						globalJson.insert(json.begin(), json.end());
+					}
+				}
+
 				pathTree.push_back(Filepath);
 				if (!json.empty())
 				{
@@ -42,19 +57,6 @@ namespace hbs
 
 			} while (Filepath != ".hbs");
 
-			/*for (int i = static_cast<int>(pathTree.size()) - 1; i >= 0; --i)
-			{
-				FileData &file = files[pathTree[i]];
-				size_t begPos = file.hbs.find("{{ include");
-				size_t endPos = file.hbs.find("}}", begPos);
-
-				if (begPos != file.hbs.npos && endPos != file.hbs.npos)
-				{
-					std::string subStr = file.hbs.substr(begPos + 12, endPos - (begPos + 12) - 2);
-					removeFronBackWhitespaces(&subStr);
-					loadIncludeTree(subStr + ".hbs"));
-				}
-			}*/
 			for (int i = static_cast<int>(pathTree.size()) - 1; i >= 0; --i)
 			{
 				if (files[pathTree[i]].hbs.find("{{ include") != files[pathTree[i]].hbs.npos)
@@ -62,6 +64,7 @@ namespace hbs
 					loadIncludeTree(pathTree[i]);
 				}
 			}
+			globalJson.erase("template");
 		}
 
 		void loadIncludeTree(const std::string &path)
@@ -81,6 +84,7 @@ namespace hbs
 				std::string hbs(parse_hbsToString(fileStr));
 				nlohmann::json json = parse_hbsToJson(fileStr);
 				files.insert(std::pair<std::string, FileData>(subStr, { hbs, json }));
+				globalJson.insert(json.begin(), json.end());
 
 				loadIncludeTree(subStr);
 

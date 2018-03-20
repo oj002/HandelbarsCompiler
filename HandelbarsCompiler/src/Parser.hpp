@@ -68,12 +68,12 @@ namespace hbs
 		void loadIncludeTree(const std::string &path)
 		{
 			std::string file{ files[path].hbs };
-			std::regex regex("\\{\\{(\\s?)include(\\s?)\"(.+)\"(\\s?)\\}\\}");
+			static const std::regex regex(R"lit(\{\{(\s?)include(\s?)"(.+)"(\s?)\}\})lit", std::regex::optimize);
 			std::smatch match;
+			std::smatch matchIncludePath;
 			while (std::regex_search(file, match, regex))
 			{
-				std::regex regexIncludePath("\"(.+)\"");
-				std::smatch matchIncludePath;
+				static const std::regex regexIncludePath("\"(.+)\"", std::regex::optimize);
 				std::string regexResult{ match.str() };
 				std::regex_search(regexResult, matchIncludePath, regexIncludePath);
 

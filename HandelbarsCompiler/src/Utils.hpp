@@ -9,7 +9,7 @@
 
 namespace hbs
 {
-	nlohmann::json parse_hbsToJson(const std::string &str)
+	inline nlohmann::json parse_hbsToJson(const std::string &str)
 	{
 		if (str.find("---") == str.npos)
 		{
@@ -20,7 +20,7 @@ namespace hbs
 		return nlohmann::json::parse(stream);
 	}
 
-	std::string parse_hbsToString(const std::string &str)
+	inline std::string parse_hbsToString(const std::string &str)
 	{
 		if (str.find("---") != std::string::npos)
 		{
@@ -30,7 +30,7 @@ namespace hbs
 		return str;
 	}
 
-	void removeFronBackWhitespaces(std::string * str)
+	inline void removeFronBackWhitespaces(std::string * str)
 	{
 		str->erase(str->begin(), std::find_if(str->begin(), str->end(), [](int ch) { return std::isspace(ch) == 0; }));
 		str->erase(std::find_if(str->rbegin(), str->rend(), [](int ch) { return std::isspace(ch) == 0; }).base(), str->end());

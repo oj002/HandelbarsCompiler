@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils.hpp"
 #include <map>
+#include <regex>
 
 namespace hbs
 {
@@ -11,12 +12,12 @@ namespace hbs
 		{
 			loadTemplates(path);
 		
-			for (auto& itr : files)
+			/*for (auto& itr : files)
 			{
 				std::cout << itr.first << ":\n" << itr.second.hbs << "\nJson:\n" << itr.second.json << "\n\n\n";
 			}
 
-			std::cout << "global Json:\n" << globalJson << '\n';
+			std::cout << "global Json:\n" << globalJson << '\n';*/
 		}
 
 	private:
@@ -59,42 +60,39 @@ namespace hbs
 
 			for (int i = static_cast<int>(pathTree.size()) - 1; i >= 0; --i)
 			{
-				if (files[pathTree[i]].hbs.find("{{ include") != files[pathTree[i]].hbs.npos)
-				{
-					loadIncludeTree(pathTree[i]);
-				}
+				loadIncludeTree(pathTree[i]);
 			}
 			globalJson.erase("template");
 		}
 
 		void loadIncludeTree(const std::string &path)
 		{
-			FileData &file = files[path];
-			size_t begPos = file.hbs.find("{{ include");
-			size_t endPos = file.hbs.find("}}", begPos);
-			while (begPos != file.hbs.npos && endPos != file.hbs.npos)
+			std::string file{ files[path].hbs };
+			std::regex regex("\\{\\{(\\s?)include(\\s?)\"(.+)\"(\\s?)\\}\\}");
+			std::smatch match;
+			while (std::regex_search(file, match, regex))
 			{
-				std::string subStr = file.hbs.substr(begPos + 12, endPos - (begPos + 12) - 2);
-				removeFronBackWhitespaces(&subStr);
-				subStr += ".hbs";
+				std::regex regexIncludePath("\"(.+)\"");
+				std::smatch matchIncludePath;
+				std::string regexResult{ match.str() };
+				std::regex_search(regexResult, matchIncludePath, regexIncludePath);
 
-				std::ifstream fin(subStr);
+				std::string includePath{ matchIncludePath.str().substr(1, matchIncludePath.str().size() - 2) };
+				includePath += ".hbs";
+				std::ifstream fin(includePath);
 				std::string fileStr((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
 
 				std::string hbs(parse_hbsToString(fileStr));
 				nlohmann::json json = parse_hbsToJson(fileStr);
-				files.insert(std::pair<std::string, FileData>(subStr, { hbs, json }));
+				files.insert(std::pair<std::string, FileData>(includePath, { hbs, json }));
 				globalJson.insert(json.begin(), json.end());
 
-				loadIncludeTree(subStr);
-
-				file.hbs.erase(begPos, endPos - begPos + 2);
-				begPos = file.hbs.find("{{ include");
-				endPos = file.hbs.find("}}", begPos);
+				file = match.suffix();
+				loadIncludeTree(includePath);
 			}
 		}
 		
-	private:
+	public:
 		nlohmann::json globalJson;
 
 		struct FileData
